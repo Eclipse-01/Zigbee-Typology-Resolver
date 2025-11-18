@@ -65,7 +65,7 @@
             </div>
             <div class="panel-footer">
                 <div style="font-size: 0.75rem; color: #666; margin-bottom: 10px; text-align: center;">
-                    无需填写 Key，使用服务器配置
+                    使用FlyAI生成结构图
                 </div>
                 <button onclick="analyzeTopology()" id="generate-btn">✨ 智能生成拓扑图</button>
             </div>
@@ -113,14 +113,57 @@
         loader.classList.remove('hidden');
         status.innerText = "请求后端...";
 
-        const systemPrompt = `你是一个 ZigBee 网络日志分析专家。
-从串口输出中提取网络拓扑：
-- 设备类型 (ROU, END, COORDINATOR)
-- 本节点地址 (NWK)
-- 父节点地址 (pNWK)
+        const systemPrompt = `# Role
+You are a ZigBee Network Log Parser. Your job is to extract network topology data from raw serial logs and output strictly valid JSON.
 
-输出纯 JSON（无 Markdown）：
-{"nodes": [{"id": "0000", "label": "Coordinator\\n0000", "type": "Coordinator"}], "edges": [{"from": "0000", "to": "ABCD"}]}`;
+# Input Data Dictionary (CRITICAL RULES)
+Read the logs line by line and apply these rules:
+
+1. **Identify Device Type & ID**:
+   - If line contains `ROU NWK: <ID>`, then Node `<ID>` is a **Router** (Type: ROU).
+   - If line contains `END NWK: <ID>`, then Node `<ID>` is a **EndDevice** (Type: END).
+   - If line contains `Coordinator` or `0000`, treat `0000` as the Root Coordinator (Type: COORD).
+
+2. **Identify Relationships (Edges)**:
+   - Look for the pattern `pNWK: <ParentID>`.
+   - This means `<ParentID>` is the PARENT of the current node.
+   - Direction: From `<ParentID>` TO `<CurrentID>`.
+
+3. **Ignore Noise**:
+   - Ignore timestamps (e.g., `[12:00:05]`), "Hello World", or unrelated hex dumps.
+   - Only process lines containing `NWK:` and `pNWK:`.
+
+# Output Format
+Return ONLY a JSON object with this structure (no markdown, no explanations):
+{
+  "nodes": [
+    { "id": "HexID", "label": "Type\nHexID", "type": "ROU/END/COORD" }
+  ],
+  "edges": [
+    { "from": "ParentID", "to": "ChildID" }
+  ]
+}
+
+# Few-Shot Example (Learn from this)
+Input:
+[12:00] ROU NWK: 1234 pNWK: 0000
+[12:01] END NWK: 5678 pNWK: 1234
+
+Output:
+{
+  "nodes": [
+    { "id": "0000", "label": "COORD\n0000", "type": "COORD" },
+    { "id": "1234", "label": "ROU\n1234", "type": "ROU" },
+    { "id": "5678", "label": "END\n5678", "type": "END" }
+  ],
+  "edges": [
+    { "from": "0000", "to": "1234" },
+    { "from": "1234", "to": "5678" }
+  ]
+}
+
+# Your Task
+Process the following user logs and generate the JSON:`;
 
         try {
             // 修改：请求指向本地 Vercel 后端
@@ -226,3 +269,4 @@ END NWK: A98B pNWK: 5995`;
 </script>
 </body>
 </html>
+

@@ -26,20 +26,19 @@ export default async function handler(request, response) {
         return response.status(500).json({ message: 'Server configuration error.' });
     }
 
-    // 仅支持智谱（Zhipu / BigModel）GLM-4.5-Flash
-    const provider = 'zhipu';
-    const apiUrl = process.env.AI_API_URL || 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+    // 仅使用智谱 AI (GLM-4.5-Flash)
+    const provider = 'zhipuai';
+    const apiUrl = 'https://api.zhipuai.cn/v1/chat/completions';
     const model = request.body.model || process.env.AI_MODEL || 'glm-4.5-flash';
 
-    // 允许前端传入其他参数（例如 temperature, max_tokens, thinking 等），默认从环境读取
+    // 构建请求体，支持智谱 AI 的参数
     const payload = {
       model,
       messages: [{ role: 'user', content: prompt }],
     };
     if (request.body.max_tokens) payload.max_tokens = request.body.max_tokens;
     if (request.body.temperature) payload.temperature = request.body.temperature;
-    if (request.body.top_p) payload.top_p = request.body.top_p;
-    if (request.body.thinking) payload.thinking = request.body.thinking; // GLM-specific
+    if (request.body.thinking) payload.thinking = request.body.thinking; // GLM-4.5 的深度思考功能
 
     // 发送到相应的 AI API
     const aiResponse = await fetch(apiUrl, {

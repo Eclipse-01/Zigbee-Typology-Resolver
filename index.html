@@ -261,10 +261,12 @@ You are a ZigBee Network Log Parser. Your job is to extract network topology dat
    - This means <ParentID> is the PARENT of the current node.
    - Direction: From <ParentID> TO <CurrentID>.
 
-3. **Constraint**:
-   - Ignore timestamps and random text.
-   - Output ONLY JSON. No markdown formatting.
-   - **CRITICAL: NEVER guess or "correct" a parent ID. If pNWK is FFFF, FFFF must be the 'from' node. If the ID is not 0000, treat it as a ROU for injection purposes.**
+3. **Constraint (STRICT MODE)**:
+   - IGNORE ALL NON-TOPOLOGY lines.
+   - **ABSOLUTELY NO GUESSING/ASSOCIATING:** If a node's parent is not explicitly defined in the log, or if the parent ID is a special value (FFFF, NULL, etc.), you MUST treat that node as a standalone node with NO edges.
+   - Example: For 'END NWK: 9009 pNWK: FFFF', you must create Node 9009 and Edge {from: FFFF, to: 9009}.
+   - Example: For 'END NWK: BBBB', you must create Node BBBB, but NO edge.
+   - Output ONLY JSON, NO Markdown.
 
 # Few-Shot Example
 Input:
@@ -445,4 +447,5 @@ Output:
 </script>
 </body>
 </html>
+
 

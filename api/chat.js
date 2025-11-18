@@ -35,20 +35,28 @@ export default async function handler(request, response) {
     const payload = {
       model,
       messages: [{ role: 'user', content: prompt }],
+      thinking: {
+        type: 'disabled', // 禁用深度思考模式以避免超时
+      }
     };
     if (request.body.max_tokens) payload.max_tokens = request.body.max_tokens;
     if (request.body.temperature) payload.temperature = request.body.temperature;
-    if (request.body.thinking) payload.thinking = request.body.thinking; // GLM-4.5 的深度思考功能
+    // 注意: 思考模式已禁用，如需启用请修改上方 thinking.type 为 'enabled'
 
-    // 发送到相应的 AI API
-    const aiResponse = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    // 发送到相应的 AI API，设置 30 秒超时
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      const aiResponse = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
     if (!aiResponse.ok) {
       // 如果 AI 服务返回错误，将错误信息传递给前端
@@ -77,8 +85,14 @@ export default async function handler(request, response) {
     // 将 AI 的回复成功返回给前端，同时返回 provider 信息，便于调试
     response.status(200).json({ provider, model, text: aiText, raw: aiData });
 
+    } finally {
+      clearTimeout(timeoutId);
+    }
   } catch (error) {
     console.error('Internal Server Error:', error);
+    if (error.name === 'AbortError') {
+      return response.status(504).json({ message: 'Request timeout - AI service took too long to respond.' });
+    }
     response.status(500).json({ message: 'An internal server error occurred.' });
   }
 }

@@ -264,6 +264,7 @@ You are a ZigBee Network Log Parser. Your job is to extract network topology dat
 3. **Constraint**:
    - Ignore timestamps and random text.
    - Output ONLY JSON. No markdown formatting.
+   - **CRITICAL: NEVER guess or "correct" a parent ID. If pNWK is FFFF, FFFF must be the 'from' node. If the ID is not 0000, treat it as a ROU for injection purposes.**
 
 # Few-Shot Example
 Input:
@@ -444,3 +445,4 @@ Output:
 </script>
 </body>
 </html>
+

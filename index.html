@@ -389,11 +389,22 @@ Output:
             to: clean(edge.to)
         }));
 
-        // 4. 添加到 Vis.js
-        nodesDataSet.add(Array.from(nodeMap.values()));
+        // 4. 过滤孤立节点：只保留有连接关系的节点
+        const connectedNodeIds = new Set();
+        edges.forEach(edge => {
+            connectedNodeIds.add(edge.from);
+            connectedNodeIds.add(edge.to);
+        });
+        
+        const connectedNodes = Array.from(nodeMap.values()).filter(node => 
+            connectedNodeIds.has(node.id)
+        );
+
+        // 5. 添加到 Vis.js
+        nodesDataSet.add(connectedNodes);
         edgesDataSet.add(edges);
 
-        // 5. 配置视图
+        // 6. 配置视图
         if (!network) {
             const container = document.getElementById("network-container");
             const options = {

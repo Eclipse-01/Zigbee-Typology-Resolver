@@ -3,148 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZigBee 拓扑智能分析器 (Serverless)</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <title>ZigBee 拓扑智能分析器 Pro</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕸️</text></svg>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/dist/vis-network.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         :root {
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg-color: #f3f4f6;
-            --border-color: #e5e7eb;
-            --text-main: #1f2937;
-            --text-sub: #6b7280;
+            --primary: #4f46e5; /* Indigo 600 */
+            --primary-hover: #4338ca; /* Indigo 700 */
+            --bg-main: #f8fafc; /* Slate 50 */
+            --bg-panel: #ffffff;
+            --text-main: #1e293b; /* Slate 800 */
+            --text-sub: #64748b; /* Slate 500 */
+            --border: #e2e8f0; /* Slate 200 */
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-main); overflow: hidden; }
+
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-main); color: var(--text-main); overflow: hidden; }
+        
         .app-container { display: flex; flex-direction: column; height: 100vh; }
-        header { background-color: var(--primary-color); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10; }
-        header h1 { margin: 0; font-size: 1.25rem; }
-        .badge { background-color: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-left: 10px; border: 1px solid rgba(255,255,255,0.3); }
+
+        /* Header Styling */
+        header { 
+            background: white; 
+            padding: 0.75rem 1.5rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            z-index: 20;
+        }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand h1 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; letter-spacing: -0.025em; }
+        .badge { background-color: #eff6ff; color: var(--primary); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; border: 1px solid #dbeafe; }
+        .status-dot { height: 8px; width: 8px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        
+        /* Layout */
         .main-content { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 350px; min-width: 300px; background: white; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 5; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
-        .panel-header, .panel-footer { padding: 1rem; background-color: #f9fafb; border-bottom: 1px solid var(--border-color); }
-        .panel-footer { border-top: 1px solid var(--border-color); border-bottom: none; }
-        .panel-body { flex: 1; padding: 1rem; overflow: hidden; }
-        textarea { width: 100%; height: 100%; box-sizing: border-box; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-family: 'Courier New', monospace; font-size: 0.875rem; resize: none; outline: none; }
-        textarea:focus { border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
-        .canvas-area { flex: 1; position: relative; background-color: #f8fafc; }
+        
+        /* Sidebar Styling */
+        .sidebar { 
+            width: 380px; 
+            background: var(--bg-panel); 
+            border-right: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            z-index: 10; 
+            box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+        }
+        
+        .panel-section { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+        .panel-title { font-size: 0.85rem; font-weight: 600; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; }
+        .panel-desc { font-size: 0.75rem; color: var(--text-sub); margin-top: -0.5rem; line-height: 1.4; }
+
+        /* Textarea Styling */
+        .input-wrapper { flex: 1; padding: 0 1.25rem; display: flex; flex-direction: column; min-height: 0; }
+        textarea { 
+            flex: 1; 
+            width: 100%; 
+            box-sizing: border-box; 
+            padding: 1rem; 
+            border: 1px solid var(--border); 
+            border-radius: 0.75rem; 
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; 
+            font-size: 0.8rem; 
+            line-height: 1.5;
+            resize: none; 
+            outline: none; 
+            background-color: #f8fafc;
+            color: #334155;
+            transition: all 0.2s;
+        }
+        textarea:focus { border-color: var(--primary); background-color: white; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        textarea::placeholder { color: #94a3b8; }
+
+        /* Button Styling */
+        .action-area { padding: 1.25rem; border-top: 1px solid var(--border); background-color: white; }
+        button { 
+            width: 100%; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); 
+            color: white; 
+            border: none; 
+            padding: 0.85rem 1rem; 
+            border-radius: 0.75rem; 
+            font-weight: 600; 
+            font-size: 0.9rem;
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 8px; 
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+        }
+        button:hover { transform: translateY(-1px); box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3); }
+        button:active { transform: translateY(0); }
+        button:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        /* Canvas Area */
+        .canvas-area { flex: 1; position: relative; background-color: #f1f5f9; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; }
         #network-container { width: 100%; height: 100%; }
-        button { width: 100%; background-color: var(--primary-color); color: white; border: none; padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
-        button:hover { background-color: var(--primary-hover); }
-        button:disabled { background-color: #9ca3af; cursor: not-allowed; }
-        .input-group { margin-bottom: 0.75rem; position: relative; }
-        .legend { position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.95); padding: 0.75rem; border-radius: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid var(--border-color); font-size: 0.75rem; backdrop-filter: blur(4px); }
-        .legend-item { display: flex; align-items: center; margin-bottom: 4px; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
-        .loading { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; backdrop-filter: blur(2px); }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+
+        /* Floating Components */
+        .legend { 
+            position: absolute; 
+            top: 1.5rem; 
+            right: 1.5rem; 
+            background: rgba(255, 255, 255, 0.85); 
+            padding: 1rem; 
+            border-radius: 1rem; 
+            box-shadow: var(--shadow); 
+            border: 1px solid rgba(255,255,255,0.5); 
+            font-size: 0.8rem; 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            min-width: 140px;
+        }
+        .legend-title { font-weight: 700; margin-bottom: 0.75rem; color: var(--text-main); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 6px; color: var(--text-main); font-weight: 500; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        /* Loading State */
+        .loading-overlay { 
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(255,255,255,0.6); 
+            backdrop-filter: blur(4px); 
+            display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; 
+            z-index: 50; 
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .loading-overlay.active { opacity: 1; pointer-events: all; }
+        .spinner { 
+            border: 3px solid #e2e8f0; 
+            border-top: 3px solid var(--primary); 
+            border-radius: 50%; 
+            width: 40px; height: 40px; 
+            animation: spin 0.8s cubic-bezier(0.55, 0.055, 0.675, 0.19) infinite; 
+            margin-bottom: 1rem; 
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .hidden { display: none !important; }
-        #error-banner { background-color: #fee2e2; border-bottom: 1px solid #ef4444; color: #b91c1c; padding: 0.5rem; font-size: 0.875rem; text-align: center; display: none; }
+
+        #error-banner { 
+            background-color: #fee2e2; color: #991b1b; 
+            padding: 0.5rem; text-align: center; font-size: 0.8rem; font-weight: 600; display: none; 
+        }
     </style>
 </head>
 <body>
 <div class="app-container">
-    <div id="error-banner">⚠️ 核心库加载失败。请检查网络连接。</div>
+    <div id="error-banner">⚠️ Vis.js 库加载失败，请检查网络。</div>
+    
     <header>
-        <div style="display:flex; align-items:center;">
-            <span style="font-size: 1.5rem; margin-right: 8px;">🕸️</span>
-            <div><h1>ZigBee 拓扑智能分析器</h1></div>
-            <span class="badge">Vercel 代理模式</span>
+        <div class="brand">
+            <span style="font-size: 1.5rem;">🕸️</span>
+            <div>
+                <h1>ZigBee 拓扑分析器</h1>
+            </div>
+            <span class="badge">Pro</span>
         </div>
-        <div style="font-size: 0.875rem; opacity: 0.9;">状态: <span id="status-text">准备就绪</span></div>
+        <div style="font-size: 0.8rem; color: var(--text-sub); display: flex; align-items: center;">
+            <span class="status-dot"></span>
+            <span id="status-text">系统就绪</span>
+        </div>
     </header>
+
     <div class="main-content">
         <aside class="sidebar">
-            <div class="panel-header">
-                <label style="font-weight: bold; font-size: 0.875rem; display: block; margin-bottom: 4px;">📝 串口原始数据</label>
-                <div style="font-size: 0.75rem; color: var(--text-sub);">粘贴数据，系统将通过 Vercel 后端分析</div>
+            <div class="panel-section">
+                <div class="panel-title">原始数据输入</div>
+                <div class="panel-desc">粘贴来自 SecureCRT、XShell 或嵌入式调试口的原始 HEX/ASCII 日志。</div>
             </div>
-            <div class="panel-body">
-                <textarea id="serial-input" placeholder="粘贴串口输出数据..."></textarea>
+            <div class="input-wrapper">
+                <textarea id="serial-input" spellcheck="false" placeholder="[12:00:01] ROU NWK: 1234..."></textarea>
             </div>
-            <div class="panel-footer">
-                <div style="font-size: 0.75rem; color: #666; margin-bottom: 10px; text-align: center;">
-                    使用FlyAI生成结构图
+            <div class="action-area">
+                <button onclick="analyzeTopology()" id="generate-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h6"/><path d="M22 12h-6"/><path d="M12 2v2"/><path d="M12 12l4.09-4.09L18 6"/><path d="M12 12l-4.09 4.09L6 18"/><path d="M12 22v-2"/><path d="M12 12l-4.09-4.09L6 6"/><path d="M12 12l4.09 4.09L18 18"/></svg>
+                    智能生成拓扑结构
+                </button>
+                <div style="text-align: center; font-size: 0.7rem; color: #94a3b8; margin-top: 10px;">
+                    Powered by LLM Analysis
                 </div>
-                <button onclick="analyzeTopology()" id="generate-btn">✨ 智能生成拓扑图</button>
             </div>
         </aside>
+
         <main class="canvas-area">
             <div id="network-container"></div>
+            
             <div class="legend">
-                <div style="font-weight: bold; margin-bottom: 6px; color: var(--text-main);">图例</div>
-                <div class="legend-item"><span class="dot" style="background:#FF5722;"></span> 协调器</div>
-                <div class="legend-item"><span class="dot" style="background:#4CAF50;"></span> 路由器</div>
-                <div class="legend-item"><span class="dot" style="background:#2196F3;"></span> 终端设备</div>
+                <div class="legend-title">图例说明</div>
+                <div class="legend-item"><span class="dot" style="background:#f97316;"></span> 协调器 (0000)</div>
+                <div class="legend-item"><span class="dot" style="background:#22c55e;"></span> 路由器 (ROU)</div>
+                <div class="legend-item"><span class="dot" style="background:#3b82f6;"></span> 终端设备 (END)</div>
             </div>
-            <div id="loading-indicator" class="loading hidden">
+
+            <div id="loading-overlay" class="loading-overlay">
                 <div class="spinner"></div>
-                <div style="color: var(--primary-color); font-weight: 600;">正在连接后端分析...</div>
-                <div style="font-size: 0.75rem; color: #666; margin-top: 5px;">请求路径: /api/chat</div>
+                <div style="color: var(--text-main); font-weight: 600;">正在进行 AI 语义分析...</div>
+                <div style="font-size: 0.8rem; color: var(--text-sub); margin-top: 5px;">解析节点关系与层级结构</div>
             </div>
         </main>
     </div>
 </div>
+
 <script>
     let network = null;
     let nodesDataSet = null;
     let edgesDataSet = null;
 
+    // 初始化 Vis.js 数据集
     window.addEventListener('load', function() {
         if (typeof vis === 'undefined') {
             document.getElementById('error-banner').style.display = 'block';
         } else {
             nodesDataSet = new vis.DataSet();
             edgesDataSet = new vis.DataSet();
+            
+            // 填入默认示例
+            const exampleText = `[12:00:05] Get Data
+ROU NWK: 6702 pNWK: 0000
+[12:00:06] Get Data
+END NWK: AB49 pNWK: 6702
+[12:00:07] Hello World
+ROU NWK: 5995 pNWK: 6702
+END NWK: A98B pNWK: 5995`;
+            document.getElementById('serial-input').value = exampleText;
         }
     });
 
     async function analyzeTopology() {
         const input = document.getElementById('serial-input').value.trim();
         const btn = document.getElementById('generate-btn');
-        const loader = document.getElementById('loading-indicator');
+        const loader = document.getElementById('loading-overlay');
         const status = document.getElementById('status-text');
 
         if (!input) { alert("请先粘贴串口数据！"); return; }
         
+        // UI 状态切换
         btn.disabled = true;
-        btn.innerHTML = "分析中...";
-        loader.classList.remove('hidden');
-        status.innerText = "请求后端...";
+        loader.classList.add('active');
+        status.innerText = "正在请求后端...";
+        status.style.color = "#f59e0b"; // Orange
 
+        // 优化后的 Prompt：包含明确的规则和示例，防止 AI 产生幻觉
         const systemPrompt = `# Role
 You are a ZigBee Network Log Parser. Your job is to extract network topology data from raw serial logs and output strictly valid JSON.
 
 # Input Data Dictionary (CRITICAL RULES)
-Read the logs line by line and apply these rules:
-
 1. **Identify Device Type & ID**:
-   - If line contains `ROU NWK: <ID>`, then Node `<ID>` is a **Router** (Type: ROU).
-   - If line contains `END NWK: <ID>`, then Node `<ID>` is a **EndDevice** (Type: END).
-   - If line contains `Coordinator` or `0000`, treat `0000` as the Root Coordinator (Type: COORD).
+   - If line contains 'ROU NWK: <ID>', Node <ID> is a **Router** (Type: ROU).
+   - If line contains 'END NWK: <ID>', Node <ID> is a **EndDevice** (Type: END).
+   - If line contains 'Coordinator' or '0000', treat '0000' as the Root Coordinator (Type: COORD).
 
 2. **Identify Relationships (Edges)**:
-   - Look for the pattern `pNWK: <ParentID>`.
-   - This means `<ParentID>` is the PARENT of the current node.
-   - Direction: From `<ParentID>` TO `<CurrentID>`.
+   - Look for the pattern 'pNWK: <ParentID>'.
+   - This means <ParentID> is the PARENT of the current node.
+   - Direction: From <ParentID> TO <CurrentID>.
 
-3. **Ignore Noise**:
-   - Ignore timestamps (e.g., `[12:00:05]`), "Hello World", or unrelated hex dumps.
-   - Only process lines containing `NWK:` and `pNWK:`.
+3. **Constraint**:
+   - Ignore timestamps and random text.
+   - Output ONLY JSON. No markdown formatting.
 
-# Output Format
-Return ONLY a JSON object with this structure (no markdown, no explanations):
-{
-  "nodes": [
-    { "id": "HexID", "label": "Type\nHexID", "type": "ROU/END/COORD" }
-  ],
-  "edges": [
-    { "from": "ParentID", "to": "ChildID" }
-  ]
-}
-
-# Few-Shot Example (Learn from this)
+# Few-Shot Example
 Input:
 [12:00] ROU NWK: 1234 pNWK: 0000
 [12:01] END NWK: 5678 pNWK: 1234
@@ -152,26 +273,22 @@ Input:
 Output:
 {
   "nodes": [
-    { "id": "0000", "label": "COORD\n0000", "type": "COORD" },
-    { "id": "1234", "label": "ROU\n1234", "type": "ROU" },
-    { "id": "5678", "label": "END\n5678", "type": "END" }
+    { "id": "0000", "label": "COORD", "type": "COORD" },
+    { "id": "1234", "label": "ROU 1234", "type": "ROU" },
+    { "id": "5678", "label": "END 5678", "type": "END" }
   ],
   "edges": [
     { "from": "0000", "to": "1234" },
     { "from": "1234", "to": "5678" }
   ]
-}
-
-# Your Task
-Process the following user logs and generate the JSON:`;
+}`;
 
         try {
-            // 修改：请求指向本地 Vercel 后端
+            // 调用 Vercel Serverless Function
             const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    // 后端现在支持直接接收 messages
                     messages: [
                         { role: "system", content: systemPrompt },
                         { role: "user", content: input }
@@ -179,94 +296,151 @@ Process the following user logs and generate the JSON:`;
                 })
             });
 
-            if (!response.ok) {
-                const errText = await response.text();
-                let errMsg = `HTTP ${response.status}`;
-                try {
-                    const errJson = JSON.parse(errText);
-                    errMsg = errJson.message || errMsg;
-                } catch(e) {}
-                throw new Error(errMsg);
-            }
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             const data = await response.json();
+            // 清洗数据：去除可能存在的 Markdown 代码块标记
             const content = data.choices[0].message.content;
             const jsonStr = content.replace(/```json/g, '').replace(/```/g, '').trim();
+            
             const topologyData = JSON.parse(jsonStr);
+            
             renderGraph(topologyData);
-            status.innerText = "解析成功";
+            
+            status.innerText = "分析完成";
+            status.style.color = "#22c55e"; // Green
+
         } catch (error) {
-            console.error("Analyze Error:", error);
-            let msg = error.message;
-            if (msg.includes("SyntaxError")) msg = "AI 返回格式错误，请重试";
-            alert("错误: " + msg + "\n(请确保已在 Vercel 设置 AI_API_KEY 环境变量)");
+            console.error("Error:", error);
+            alert("分析失败: " + error.message);
             status.innerText = "发生错误";
+            status.style.color = "#ef4444"; // Red
         } finally {
             btn.disabled = false;
-            btn.innerHTML = "<span>✨ 智能生成拓扑图</span>";
-            loader.classList.add('hidden');
+            loader.classList.remove('active');
         }
     }
 
+    /**
+     * 核心渲染函数：包含自动补全和分组样式逻辑
+     */
     function renderGraph(data) {
         if (!nodesDataSet || !edgesDataSet) return;
         nodesDataSet.clear();
         edgesDataSet.clear();
 
-        const nodes = (data.nodes || []).map(node => {
-            let color = "#97C2FC";
-            let shape = "box";
-            const typeLower = (node.type || "").toLowerCase();
-            if (node.id === "0000" || typeLower.includes("coord")) { color = "#FF5722"; shape = "hexagon"; }
-            else if (typeLower.includes("rou")) { color = "#4CAF50"; shape = "ellipse"; }
-            else if (typeLower.includes("end")) { color = "#2196F3"; shape = "box"; }
-            return {
-                id: node.id,
-                label: node.label || `${node.type}\n${node.id}`,
-                color: { background: color, border: "white" },
-                shape: shape,
-                font: { color: "white", face: "arial" },
-                shadow: true,
+        const nodeMap = new Map();
+        
+        // 辅助：标准化 ID (转大写，去 0x)
+        const clean = (id) => (id || "").replace(/^0x/i, '').toUpperCase();
+
+        // 1. 收集所有出现的节点 ID (包括仅在 edges 中出现的)
+        const rawEdges = data.edges || [];
+        const allNodeIds = new Set();
+        
+        rawEdges.forEach(edge => {
+            allNodeIds.add(clean(edge.from));
+            allNodeIds.add(clean(edge.to));
+        });
+        (data.nodes || []).forEach(node => allNodeIds.add(clean(node.id)));
+
+        // 2. 生成节点数据 (关键：使用 groups 控制样式)
+        allNodeIds.forEach(id => {
+            // 尝试从 AI 返回的数据中找定义
+            const aiNode = (data.nodes || []).find(n => clean(n.id) === id);
+            
+            // 默认值
+            let group = "enddevice"; 
+            let label = `DEV\n${id}`;
+
+            // 规则判定逻辑
+            if (id === "0000") {
+                // 强制判定 0000 为协调器
+                group = "coordinator";
+                label = `Coordinator\n0000`;
+            } else if (aiNode) {
+                // 如果 AI 返回了类型
+                const type = (aiNode.type || "").toLowerCase();
+                if (type.includes("rou")) group = "router";
+                else if (type.includes("coord")) group = "coordinator";
+                // 使用 AI 的 label，或者自动生成
+                label = aiNode.label || label;
+            } else if (rawEdges.some(e => clean(e.from) === id)) {
+                // 如果 AI 没定义它，但它作为父节点出现了，那它肯定是路由器
+                group = "router";
+                label = `ROU\n${id}`;
+            }
+
+            // 存入 Map
+            nodeMap.set(id, {
+                id: id,
+                label: label,
+                group: group, // <--- 样式核心
                 margin: 10
-            };
+            });
         });
 
-        const edges = (data.edges || []).map(edge => ({
-            from: edge.from,
-            to: edge.to,
-            arrows: "to",
-            color: { color: "#848484" },
-            width: 2,
-            smooth: { type: "cubicBezier" }
+        // 3. 生成连线
+        const edges = rawEdges.map(edge => ({
+            from: clean(edge.from),
+            to: clean(edge.to)
         }));
 
-        nodesDataSet.add(nodes);
+        // 4. 添加到 Vis.js
+        nodesDataSet.add(Array.from(nodeMap.values()));
         edgesDataSet.add(edges);
 
+        // 5. 配置视图
         if (!network) {
             const container = document.getElementById("network-container");
             const options = {
-                layout: { hierarchical: { direction: "UD", sortMethod: "directed", levelSeparation: 150, nodeSpacing: 200 } },
+                // --- 样式组配置 (Groups) ---
+                groups: {
+                    coordinator: {
+                        shape: 'hexagon',
+                        color: { background: '#f97316', border: '#ea580c', highlight: '#fb923c' }, // Orange
+                        font: { color: 'white', size: 14, face: 'Inter', bold: true },
+                        borderWidth: 2,
+                        size: 35
+                    },
+                    router: {
+                        shape: 'ellipse',
+                        color: { background: '#22c55e', border: '#16a34a', highlight: '#4ade80' }, // Green
+                        font: { color: 'white', size: 12, face: 'Inter' },
+                        borderWidth: 1
+                    },
+                    enddevice: {
+                        shape: 'box',
+                        color: { background: '#3b82f6', border: '#2563eb', highlight: '#60a5fa' }, // Blue
+                        font: { color: 'white', size: 12, face: 'Inter' },
+                        shapeProperties: { borderRadius: 6 },
+                        borderWidth: 1
+                    }
+                },
+                // --------------------------
+                layout: { 
+                    hierarchical: { 
+                        direction: "UD", 
+                        sortMethod: "directed", 
+                        levelSeparation: 120, 
+                        nodeSpacing: 180 
+                    } 
+                },
+                edges: {
+                    arrows: { to: { enabled: true, scaleFactor: 0.8 } },
+                    color: { color: '#cbd5e1', highlight: '#3b82f6' },
+                    width: 2,
+                    smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.5 }
+                },
                 physics: { enabled: false },
-                interaction: { navigationButtons: true, keyboard: true, zoomView: true }
+                interaction: { hover: true, navigationButtons: true, zoomView: true }
             };
             network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, options);
         } else {
+            network.setData({ nodes: nodesDataSet, edges: edgesDataSet });
             network.fit();
         }
-    }
-
-    window.onload = function() {
-        const exampleText = `[12:00:05] Get Data
-ROU NWK: 6702 pNWK: 0000
-[12:00:06] Get Data
-END NWK: AB49 pNWK: 6702
-[12:00:07] Hello World
-ROU NWK: 5995 pNWK: 6702
-END NWK: A98B pNWK: 5995`;
-        document.getElementById('serial-input').value = exampleText;
     }
 </script>
 </body>
 </html>
-

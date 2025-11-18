@@ -27,7 +27,7 @@ export default async function handler(request, response) {
         'Authorization': `Bearer ${generateToken(apiKey)}` // 在服务器端生成 Token
       },
       body: JSON.stringify({
-        model: 'glm-4-flash', // 使用更快的 Flash 模型
+        model: 'glm-4.5-flash', // 使用最新的 GLM-4.5 Flash 模型
         messages: messages,
         temperature: 0.1
       })

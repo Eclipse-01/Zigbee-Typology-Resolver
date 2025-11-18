@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 背景：圆角矩形，使用应用主色调蓝色 -->
+  <rect x="0" y="0" width="64" height="64" rx="16" fill="#2563eb" />
+  
+  <!-- 连接线：白色，表示网络链路 -->
+  <path d="M32 18 L14 46" stroke="white" stroke-width="4" stroke-linecap="round" />
+  <path d="M32 18 L50 46" stroke="white" stroke-width="4" stroke-linecap="round" />
+  <path d="M14 46 L50 46" stroke="white" stroke-width="2" stroke-opacity="0.5" stroke-dasharray="4 2" stroke-linecap="round" />
+
+  <!-- 节点：顶部为协调器，底部为子设备 -->
+  <!-- 顶部节点 (Coordinator) -->
+  <circle cx="32" cy="18" r="7" fill="#ffffff" />
+  
+  <!-- 左下节点 (Router) -->
+  <circle cx="14" cy="46" r="5" fill="#ffffff" fill-opacity="0.8" />
+  
+  <!-- 右下节点 (End Device) -->
+  <rect x="45" y="41" width="10" height="10" rx="2" fill="#ffffff" fill-opacity="0.8" />
+</svg>
